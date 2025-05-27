@@ -34,3 +34,13 @@ def submit_message(msg: MessageIn):
     }
     messages_db.append(new_message)
     return {"status": "Message stored", "id": new_message["id"]}
+
+@app.get("/messages/unread/{recipient}")
+def get_unread_messages(recipient: str):
+    unread_messages = [
+        msg for msg in messages_db if msg["recipient"] == recipient and not msg["read"]
+    ]
+    for msg in unread_messages:
+        msg["read"] = True  # Mark them as read
+    return {"unread_messages": unread_messages}
+
