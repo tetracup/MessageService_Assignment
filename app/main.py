@@ -1,11 +1,16 @@
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel
 from uuid import uuid4
 from datetime import datetime
 from typing import List, Dict
 from fastapi import HTTPException
 from fastapi import Query
+from pydantic import BaseModel
+from sqlalchemy.future import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from models import Message
+from database import get_db
 
 #Define sent message 
 class MessageIn(BaseModel):
@@ -27,18 +32,18 @@ app = FastAPI()
 def root():
     return {"message": "Message service is up and running."}
 
-#define post on messages
 @app.post("/messages")
-def submit_message(msg: MessageIn):
-    new_message = {
-        "id": str(uuid4()),
-        "recipient": msg.recipient,
-        "message": msg.message,
-        "timestamp": datetime.utcnow().isoformat(),
-        "read": False
-    }
-    messages_db.append(new_message)
-    return {"status": "Message stored", "id": new_message["id"]}
+async def submit_message(msg: MessageIn, db: AsyncSession = Depends(get_db)):
+    new_message = Message(
+        id=str(uuid4()),
+        recipient=msg.recipient,
+        message=msg.message,
+        timestamp=datetime.utcnow(),
+        read=False,
+    )
+    db.add(new_message)
+    await db.commit()
+    return {"status": "Message stored", "id": new_message.id}
 
 @app.get("/message/")
 def get_messages():
