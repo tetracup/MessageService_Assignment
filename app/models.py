@@ -12,4 +12,14 @@ class Message(Base):
     message = Column(String)
     timestamp = Column(DateTime, default=datetime.utcnow)
     read = Column(Boolean, default=False)
+"""
+class User(Base):
+    __tablename__ = "users"
 
+    id = Column(String, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    address = Column(String, index=True)
+    phone_number = Column(String, index=True)
+    username = Column(String, unique=True, index=True, nullable=False)
+    
+    """
