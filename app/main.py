@@ -79,7 +79,7 @@ async def get_messages(db: AsyncSession = Depends(get_db)):
         } for msg in messages
     ]}
 
-@app.post("/users/{username}/messages/send", tags=["User"])
+@app.post("/users/{username}/messages", tags=["User"])
 async def submit_message(msg: MessageIn, db: AsyncSession = Depends(get_db)):
     # Lookup sender user by username
     if msg.sender_username == msg.recipient_username:
@@ -103,31 +103,9 @@ async def submit_message(msg: MessageIn, db: AsyncSession = Depends(get_db)):
 
     return {"status": "Message sent from " + msg.sender_username + " to " + msg.recipient_username}
 
-@app.get("/users/{username}/messages/unread", tags=["User"])
-async def get_unread_messages(username: str, db: AsyncSession = Depends(get_db)):
-    userID = await get_userID_by_username(username, db)
-    
-    result = await db.execute(
-        select(Message).where(
-            Message.recipient_id == userID,
-            Message.read == False
-        )
-    )
-       
-    messages = result.scalars().all()
-    return {
-        "unreadMessages": [
-            {
-                "id": msg.id,
-                "sender": msg.sender_id,
-                "message": msg.message,
-                "timestamp": msg.timestamp.isoformat() if msg.timestamp else None,
-            }
-            for msg in messages
-        ]
-    }
 
-@app.patch("/users/{username}/messages/read", tags=["User"])
+
+@app.patch("/users/{username}/messages", tags=["User"])
 async def mark_messages_read(username: str, db: AsyncSession = Depends(get_db)):
     userID = await get_userID_by_username(username, db)
         
@@ -139,11 +117,12 @@ async def mark_messages_read(username: str, db: AsyncSession = Depends(get_db)):
     await db.commit()
 
     return {"status": "Messages marked as read"}
-"""
-#Single Delete Call
-@app.delete("/messages/{message_id}", tags=["User"])
-async def delete_message(message_id: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Message).where(Message.id == message_id))
+
+@app.delete("/users/{username}/messages/{message_id}", tags=["User"])
+async def delete_message(username: str, message_id: str, db: AsyncSession = Depends(get_db)):
+    userID = await get_userID_by_username(username, db)
+    
+    result = await db.execute(select(Message).where(Message.id == message_id, Message.recipient_id == userID))
     message = result.scalars().first()
 
     if message is None:
@@ -153,7 +132,7 @@ async def delete_message(message_id: str, db: AsyncSession = Depends(get_db)):
     await db.commit()
 
     return {"status": "Message deleted"}
-"""
+
 
 @app.delete("/users/{username}/messages", tags=["User"])
 async def delete_multiple_messages(request: DeleteManyRequest, db: AsyncSession = Depends(get_db)):
@@ -171,6 +150,7 @@ async def delete_multiple_messages(request: DeleteManyRequest, db: AsyncSession 
 @app.get("/users/{username}/messages", tags=["User"])
 async def get_user_messages(
     username: str,
+    filterUnread: bool,
     start: int = Query(0, ge=0),
     stop: int = Query(10, ge=0),
     db: AsyncSession = Depends(get_db)
@@ -180,16 +160,17 @@ async def get_user_messages(
     
     userID = await get_userID_by_username(username, db)
     
-    
+    conditions = [Message.recipient_id == userID]
 
+    if filterUnread:
+        conditions.append(Message.read == False)
     stmt = (
         select(Message)
-        .where(Message.recipient_id == userID)
+        .where(*conditions)
         .order_by(Message.timestamp.desc())
         .offset(start)
         .limit(stop - start)
     )
-
     result = await db.execute(stmt)
     messages = result.scalars().all()
 
@@ -197,7 +178,7 @@ async def get_user_messages(
         "messages": [
             {
                 "message_id": msg.id,
-                "recipient": msg.recipient_id,
+                "sender_id": msg.sender_id,
                 "message": msg.message,
                 "timestamp": msg.timestamp.isoformat() if msg.timestamp else None,
                 "read": msg.read,
