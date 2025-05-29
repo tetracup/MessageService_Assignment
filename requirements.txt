@@ -2,3 +2,6 @@ uvicorn==0.34.2
 fastapi==0.115.12
 SQLAlchemy==2.0.41
 asyncpg==0.30.0
+streamlit==1.45.1
+python-dotenv==1.1.0
+psycopg2==2.9.10

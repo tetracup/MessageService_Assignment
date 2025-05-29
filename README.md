@@ -10,6 +10,7 @@ Service for sending and managing plain-text messages between users.
 ## Setup
 
 - Create a .env file with supplied database URL (This is a connection string to a hosted supabase PostgreSQL server, this can be changed to a local one given you have the connection string for it.)
+- Create a python virtual environment with "python -m venv env"
 - Activate python virtual environment 
 - Run  "pip install -r requirements.txt" ./MessageService_Assignment folder
 - (In case of a local server, run "python init_db.py" to intialize the local database)
