@@ -9,13 +9,23 @@ Service for sending and managing plain-text messages between users.
 
 ## Setup
 
-- Create a .env file with supplied database URL (This is a connection string to a hosted supabase PostgreSQL server, this can be changed to a local one given you have the connection string for it.)
-- Create a python virtual environment with "python -m venv env"
+- Create a .env file in the ./MessageService_Assignment/app folder with supplied database URL (This is a connection string to a hosted supabase PostgreSQL server, this can be changed to a local one given you have the connection string for it.)
+- Create a python virtual environment with "python -m venv venv" in the ./MessageService_Assignment folder
 - Activate python virtual environment 
 - Run  "pip install -r requirements.txt" ./MessageService_Assignment folder
 - (In case of a local server, run "python init_db.py" to intialize the local database)
 - Run "uvicorn main:app --reload" in the ./MessageService_Assignment/app folder
 - Go to specified URL (probably http://127.0.0.1:8000) and then add /docs to the end to see Swagger API documentation, here you can also find specific curl commands 
+
+The server may intially return a 500 error due to it warming up, after ~30 seconds it should be working. 
+
+## UI Setup
+
+This UI is just an example of what a user interface could look like with this API. 
+
+- While the uvicorn ASGI server is running.
+- Open another console window and activate the python environment again
+- This time run "streamlit run app_ui.py" in the ./app folder, and go to the provided URL. 
 
 ## Tasks
 
