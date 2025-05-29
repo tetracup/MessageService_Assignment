@@ -45,7 +45,46 @@ async def head_root():
 def root():
     return {"message": "Message service is up and running."}
 
-@app.post("/users", tags=["Admin"])
+
+@app.delete("/users/{username}", tags=["Admin"])
+async def delete_user(username: str, db: AsyncSession = Depends(get_db)):
+    # Lookup sender user by username
+    
+    result = await db.execute(select(User).where(User.username == username))
+    message = result.scalars().first()
+
+    if message is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    await db.delete(message)
+    await db.commit()
+
+    return {"status": "User deleted"}
+
+@app.get("/users/", tags=["Admin"])
+async def get_users(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User))
+    users = result.scalars().all()
+    return {"allUsers": [ 
+        {
+            "user_id": user.id,
+            "username": user.username
+        } for user in users
+    ]}
+
+@app.get("/messages/", tags=["Admin"])
+async def get_messages(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Message))
+    messages = result.scalars().all()
+    return {"allMessages": [ 
+        {
+            "sender": msg.sender_id,
+            "recipient": msg.recipient_id,
+            "message": msg.message
+        } for msg in messages
+    ]}
+
+@app.post("/users", tags=["User"])
 async def add_user(user: UserIn, db: AsyncSession = Depends(get_db)):
     # Lookup sender user by username
     
@@ -66,19 +105,7 @@ async def add_user(user: UserIn, db: AsyncSession = Depends(get_db)):
         raise HTTPException(
             status_code = 400,
             detail = "Username already taken")
-
-@app.get("/messages/", tags=["Admin"])
-async def get_messages(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Message))
-    messages = result.scalars().all()
-    return {"allMessages": [ 
-        {
-            "sender": msg.sender_id,
-            "recipient": msg.recipient_id,
-            "message": msg.message
-        } for msg in messages
-    ]}
-
+        
 @app.post("/users/{username}/messages", tags=["User"])
 async def submit_message(msg: MessageIn, db: AsyncSession = Depends(get_db)):
     # Lookup sender user by username
